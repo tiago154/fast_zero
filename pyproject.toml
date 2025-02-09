@@ -16,7 +16,7 @@ pytest-cov = "^6.0.0"
 taskipy = "^1.14.1"
 
 [tool.taskipy.tasks]
-dev = "fastapi dev fast_zero/app.py"
+dev = "fastapi dev fast_zero/app.py --reload"
 lint = "ruff check . && ruff check . --diff"
 format = "ruff check . --fix && ruff format ."
 pre_test = "task lint"
@@ -24,7 +24,7 @@ post_test = "echo 'Executando post_test' && coverage html"
 test = "pytest -s -x --cov=fast_zero -vv || echo 'pytest falhou!'"
 
 [tool.ruff]
-line-length = 79
+line-length = 82
 extend-exclude = ['migrations']
 
 [tool.ruff.lint]
