@@ -1,5 +1,15 @@
-# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
-# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python
+# Created by https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,database
+# Edit at https://www.toptal.com/developers/gitignore?templates=python,visualstudiocode,database
+
+### Database ###
+*.accdb
+*.db
+*.dbf
+*.mdb
+*.pdb
+*.sqlite3
+*.db-shm
+*.db-wal
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -192,4 +202,4 @@ pyrightconfig.json
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
+# End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,database

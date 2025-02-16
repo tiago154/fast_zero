@@ -8,6 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.12.*"
 fastapi = { extras = ["standard"], version = "^0.115.6" }
+sqlalchemy = "^2.0.38"
+pydantic-settings = "^2.7.1"
+alembic = "^1.14.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.3"
@@ -16,7 +19,7 @@ pytest-cov = "^6.0.0"
 taskipy = "^1.14.1"
 
 [tool.taskipy.tasks]
-dev = "fastapi dev fast_zero/app.py --reload"
+dev = "fastapi dev fast_zero/app.py"
 lint = "ruff check . && ruff check . --diff"
 format = "ruff check . --fix && ruff format ."
 pre_test = "task lint"
