@@ -2,14 +2,14 @@ from http import HTTPStatus
 
 
 def test_root_deve_retornar_ok_e_ola_mundo(client):
-    response = client.get('/')
+    response = client.get('/api/v1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'hello World'}
 
 
 def test_hello_html_deve_retornar_ola_mundo_em_html(client):
-    response = client.get('/hello_html')
+    response = client.get('/api/v1/hello_html')
 
     assert response.status_code == HTTPStatus.OK
     assert '<h1>Hello World</h1>' in response.text
@@ -17,7 +17,7 @@ def test_hello_html_deve_retornar_ola_mundo_em_html(client):
 
 def test_create_user(client, user_data):
     response = client.post(
-        '/users',
+        '/api/v1/users',
         json=user_data,
     )
 
@@ -30,7 +30,7 @@ def test_create_user(client, user_data):
 
 
 def test_read_user(client, user_data):
-    response = client.get('/users/1')
+    response = client.get('/api/v1/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -41,14 +41,14 @@ def test_read_user(client, user_data):
 
 
 def test_read_user_nao_encontrado_deve_retornar_not_found(client):
-    response = client.get('/users/150')
+    response = client.get('/api/v1/users/150')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
 def test_read_users(client, user_data):
-    response = client.get('/users')
+    response = client.get('/api/v1/users')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -69,7 +69,7 @@ def test_update_user(client, user_data):
         'password': 'testPassword',
     }
 
-    response = client.put('/users/1', json=update_user_data)
+    response = client.put('/api/v1/users/1', json=update_user_data)
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -80,21 +80,21 @@ def test_update_user(client, user_data):
 
 
 def test_update_user_nao_encontrado_deve_retornar_not_found(client, user_data):
-    response = client.put('/users/150', json=user_data)
+    response = client.put('/api/v1/users/150', json=user_data)
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
 def test_delete_user(client):
-    response = client.delete('/users/1')
+    response = client.delete('/api/v1/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted'}
 
 
 def test_delete_user_nao_encontrado_deve_retornar_not_found(client):
-    response = client.delete('/users/150')
+    response = client.delete('/api/v1/users/150')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}

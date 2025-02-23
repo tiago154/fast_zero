@@ -1,11 +1,11 @@
 from http import HTTPStatus
 
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from fast_zero.schemas import Message, UserDB, UserList, UserPublic, UserSchema
 
-# Criação da aplicação FastAPI
-app = FastAPI()
+# Criando um router
+router = APIRouter()
 
 # Banco de dados fictício (usado apenas como exemplo)
 database = []
@@ -22,14 +22,14 @@ USER_NOT_FOUND_RESPONSE = {
 
 
 # Rota de exemplo, resposta simples com um JSON
-@app.get('/', status_code=HTTPStatus.OK, response_model=Message)
+@router.get('/', status_code=HTTPStatus.OK, response_model=Message)
 def read_root():
     # Retorna uma resposta simples de "Hello World"
     return {'message': 'hello World'}
 
 
 # Rota que retorna uma página HTML simples
-@app.get('/hello_html', status_code=HTTPStatus.OK)
+@router.get('/hello_html', status_code=HTTPStatus.OK)
 def hello_html():
     # Retorna uma resposta HTML como exemplo
     return """
@@ -44,7 +44,7 @@ def hello_html():
 
 
 # Rota POST para criar um novo usuário
-@app.post('/users', status_code=HTTPStatus.CREATED, response_model=UserPublic)
+@router.post('/users', status_code=HTTPStatus.CREATED, response_model=UserPublic)
 def create_user(user: UserSchema):
     # O operador ** desempacota o dicionário retornado por user.model_dump()
     # e o usa como parâmetros
@@ -62,7 +62,7 @@ def create_user(user: UserSchema):
 
 
 # Rota GET para listar todos os usuários
-@app.get('/users', status_code=HTTPStatus.OK, response_model=UserList)
+@router.get('/users', status_code=HTTPStatus.OK, response_model=UserList)
 def list_users():
     # A função print aqui é apenas para debug, pode ser removida em produção
     print(database)
@@ -71,7 +71,7 @@ def list_users():
 
 
 # Rota GET para consultar um usuário específico pelo ID
-@app.get(
+@router.get(
     '/users/{user_id}',
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
@@ -92,7 +92,7 @@ def read_user(user_id: int):
 
 
 # Rota PUT para atualizar os dados de um usuário
-@app.put(
+@router.put(
     '/users/{user_id}',
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
@@ -119,7 +119,7 @@ def update_user(user_id: int, user: UserSchema):
 
 
 # Rota DELETE para deletar um usuário
-@app.delete(
+@router.delete(
     '/users/{user_id}',
     status_code=HTTPStatus.OK,
     response_model=Message,

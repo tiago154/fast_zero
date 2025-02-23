@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 # Modelo para mensagens genéricas de resposta
@@ -23,6 +23,9 @@ class UserPublic(BaseModel):
     id: int  # Identificador único do usuário
     username: str  # Nome de usuário
     email: EmailStr  # E-mail do usuário
+    model_config = ConfigDict(
+        from_attributes=True
+    )  # Configuração para converter atributos em campos
 
 
 # Modelo para representar uma lista de usuários públicos
