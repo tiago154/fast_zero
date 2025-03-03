@@ -85,14 +85,18 @@ def test_read_users_with_users(client, user_data, register_user):
     assert response.json() == {'users': [user_schema]}
 
 
-def test_update_user(client, user_data, register_user):
+def test_update_user(client, user_data, register_user, token):
     update_user_data = {
         'username': user_data['username'],
         'email': 'teste1@teste.com',
         'password': 'testPassword',
     }
 
-    response = client.put('/api/v2/users/1', json=update_user_data)
+    response = client.put(
+        f'/api/v2/users/{register_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json=update_user_data,
+    )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -102,22 +106,63 @@ def test_update_user(client, user_data, register_user):
     }
 
 
-def test_update_user_nao_encontrado_deve_retornar_not_found(client, user_data):
-    response = client.put('/api/v2/users/150', json=user_data)
+def test_update_user_com_usuario_errado(client, user_data, register_user, token):
+    update_user_data = {
+        'username': user_data['username'],
+        'email': 'teste1@teste.com',
+        'password': 'testPassword',
+    }
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    response = client.put(
+        '/api/v2/users/2',
+        headers={'Authorization': f'Bearer {token}'},
+        json=update_user_data,
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Not enough permission'}
 
 
-def test_delete_user(client, register_user):
-    response = client.delete('/api/v2/users/1')
+def test_delete_user(client, register_user, token):
+    response = client.delete(
+        f'/api/v2/users/{register_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User deleted successfully'}
 
 
-def test_delete_user_nao_encontrado_deve_retornar_not_found(client):
-    response = client.delete('/api/v2/users/150')
+def test_delete_user_com_usuario_errado(client, register_user, token):
+    response = client.delete(
+        '/api/v2/users/2', headers={'Authorization': f'Bearer {token}'}
+    )
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Not enough permission'}
+
+
+def test_get_token(client, register_user):
+    response = client.post(
+        '/api/v2/token',
+        data={
+            'username': register_user.username,
+            'password': register_user.clean_password,
+        },
+    )
+
+    token = response.json()
+
+    assert response.status_code == HTTPStatus.OK
+    assert token['token_type'] == 'Bearer'
+    assert 'access_token' in token
+
+
+def test_get_token_invalid(client, register_user):
+    response = client.post(
+        '/api/v2/token',
+        data={'username': register_user.username, 'password': 'invalid'},
+    )
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json() == {'detail': 'Incorrect username or password'}

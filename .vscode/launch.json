@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debugger Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "-s",
+                "--cov=fast_zero",
+                "-vv"
+            ]
+        },
+        {
+            "name": "Debugger api",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "fastapi",
+            "args": [
+                "dev",
+                "fast_zero/main.py"
+            ]
+        }
+    ]
+}

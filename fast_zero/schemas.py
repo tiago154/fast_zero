@@ -31,3 +31,8 @@ class UserPublic(BaseModel):
 # Modelo para representar uma lista de usuários públicos
 class UserList(BaseModel):
     users: list[UserPublic]  # Lista de usuários sem informações sensíveis
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

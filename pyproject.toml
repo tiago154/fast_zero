@@ -1,34 +1,38 @@
 [tool.poetry]
-name = "fast-zero"
-version = "0.1.0"
-description = ""
 authors = ["Tiago Silva <tiago.toya@hotmail.com>"]
+description = ""
+name = "fast-zero"
 readme = "README.md"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
-python = "3.12.*"
-fastapi = { extras = ["standard"], version = "^0.115.6" }
-sqlalchemy = "^2.0.38"
-pydantic-settings = "^2.7.1"
 alembic = "^1.14.1"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+pwdlib = {extras = ["argon2"], version = "^0.2.1"}
+pydantic-settings = "^2.7.1"
+pyjwt = "^2.10.1"
+python = "3.12.*"
+python-multipart = "^0.0.20"
+sqlalchemy = "^2.0.38"
+tzdata = "^2025.1"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.8.3"
 pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
+ruff = "^0.8.3"
 taskipy = "^1.14.1"
 
 [tool.taskipy.tasks]
 dev = "fastapi dev fast_zero/main.py"
-lint = "ruff check . && ruff check . --diff"
 format = "ruff check . --fix && ruff format ."
-pre_test = "task lint"
+lint = "ruff check . && ruff check . --diff"
 post_test = "echo 'Executando post_test' && coverage html"
+pre_test = "task lint"
 test = "pytest -s --cov=fast_zero -vv"
 
 [tool.ruff]
-line-length = 82
 extend-exclude = ['migrations']
+line-length = 82
 
 [tool.ruff.lint]
 preview = true
@@ -39,9 +43,9 @@ preview = true
 quote-style = 'single'
 
 [tool.pytest.ini_options]
-pythonpath = '.'
 addopts = '-p no:warnings'
+pythonpath = '.'
 
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]

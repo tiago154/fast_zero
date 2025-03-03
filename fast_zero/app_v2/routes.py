@@ -1,11 +1,18 @@
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 
 from fast_zero.database import get_session
 from fast_zero.models import User
-from fast_zero.schemas import Message, UserList, UserPublic, UserSchema
+from fast_zero.schemas import Message, Token, UserList, UserPublic, UserSchema
+from fast_zero.security import (
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    verify_password,
+)
 
 router = APIRouter()
 
@@ -45,6 +52,15 @@ USER_NOT_FOUND_RESPONSE = {
     }
 }
 
+USER_NOT_ENOUGH_PERMISSION_RESPONSE = {
+    400: {
+        'description': 'Not enough permission',
+        'content': {
+            'application/json': {'example': {'detail': 'Not enough permission'}}
+        },
+    }
+}
+
 
 # Rota de exemplo, resposta simples com um JSON
 @router.get('/', status_code=HTTPStatus.OK, response_model=Message)
@@ -79,7 +95,9 @@ def create_user(user: UserSchema, session=Depends(get_session)):
             )
 
     db_user = User(
-        username=user.username, email=user.email, password=user.password
+        username=user.username,
+        email=user.email,
+        password=get_password_hash(user.password),
     )
 
     session.add(db_user)
@@ -121,25 +139,29 @@ def read_user(user_id: int, session=Depends(get_session)):
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
     responses={
-        **USER_NOT_FOUND_RESPONSE
+        **USER_NOT_ENOUGH_PERMISSION_RESPONSE
     },  # Resposta de erro personalizada se o usuário não for encontrado
 )
-def update_user(user_id: int, user: UserSchema, session=Depends(get_session)):
-    db_user = session.get(User, user_id)
-
-    if not db_user:
+def update_user(
+    user_id: int,
+    user: UserSchema,
+    session=Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Not enough permission',
         )
 
-    for key, value in user.dict().items():
-        setattr(db_user, key, value)
+    current_user.email = user.email
+    current_user.username = user.username
+    current_user.password = get_password_hash(user.password)
 
-    session.add(db_user)
     session.commit()
-    session.refresh(db_user)
+    session.refresh(current_user)
 
-    return db_user
+    return current_user
 
 
 # Rota DELETE para deletar um usuário
@@ -148,21 +170,39 @@ def update_user(user_id: int, user: UserSchema, session=Depends(get_session)):
     status_code=HTTPStatus.OK,
     response_model=Message,
     responses={
-        **USER_NOT_FOUND_RESPONSE
+        **USER_NOT_ENOUGH_PERMISSION_RESPONSE
     },  # Resposta de erro personalizada se o usuário não for encontrado
 )
-def delete_user(user_id: int, session=Depends(get_session)):
-    db_user = session.scalar(select(User).where(User.id == user_id))
-
-    # tambem poderia ser
-    # db_user = session.get(User, user)
-
-    if not db_user:
+def delete_user(
+    user_id: int,
+    session=Depends(get_session),
+    current_user=Depends(get_current_user),
+):
+    if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Not enough permission',
         )
 
-    session.delete(db_user)
+    session.delete(current_user)
     session.commit()
 
     return {'message': 'User deleted successfully'}
+
+
+@router.post('/token', response_model=Token)
+def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session=Depends(get_session),
+):
+    user = session.scalar(select(User).where(User.username == form_data.username))
+
+    if not user or not verify_password(form_data.password, user.password):
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='Incorrect username or password',
+        )
+
+    access_token = create_access_token(data={'sub': user.username})
+
+    return {'access_token': access_token, 'token_type': 'Bearer'}
