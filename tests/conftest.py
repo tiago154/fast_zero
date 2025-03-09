@@ -7,8 +7,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+from fast_zero.app import app
 from fast_zero.database import get_session
-from fast_zero.main import app
 from fast_zero.models import User, table_registry
 from fast_zero.security import get_password_hash
 
@@ -88,7 +88,7 @@ def register_user(session, user_data):
 @pytest.fixture
 def token(client, register_user):
     response = client.post(
-        '/api/v2/token',
+        '/api/auth/token',
         data={
             'username': register_user.username,
             'password': register_user.clean_password,

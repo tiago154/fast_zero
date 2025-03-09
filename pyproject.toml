@@ -23,12 +23,12 @@ ruff = "^0.8.3"
 taskipy = "^1.14.1"
 
 [tool.taskipy.tasks]
-dev = "fastapi dev fast_zero/main.py"
-format = "ruff check . --fix && ruff format ."
+dev = "fastapi dev fast_zero/app.py"
 lint = "ruff check . && ruff check . --diff"
+lint_fix = "ruff check . --fix && ruff format ."
 post_test = "echo 'Executando post_test' && coverage html"
 pre_test = "task lint"
-test = "pytest -s --cov=fast_zero -vv"
+test = "pytest --envfile .env.test -s --cov=fast_zero -vv"
 
 [tool.ruff]
 extend-exclude = ['migrations']
@@ -44,7 +44,11 @@ quote-style = 'single'
 
 [tool.pytest.ini_options]
 addopts = '-p no:warnings'
+env_files = ['.env.test']
 pythonpath = '.'
+
+[tool.coverage.run]
+omit = ['fast_zero/app_v1/*']
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

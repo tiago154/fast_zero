@@ -1,21 +1,19 @@
 from http import HTTPStatus
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from fast_zero.database import get_session
 from fast_zero.models import User
-from fast_zero.schemas import Message, Token, UserList, UserPublic, UserSchema
-from fast_zero.security import (
-    create_access_token,
-    get_current_user,
-    get_password_hash,
-    verify_password,
-)
+from fast_zero.schemas import Message, UserList, UserPublic, UserSchema
+from fast_zero.security import get_current_user, get_password_hash
 
-router = APIRouter()
+router = APIRouter(prefix='/users', tags=['users'])
 
+T_Session = Annotated[Session, Depends(get_session)]
+T_CurrentUser = Annotated[User, Depends(get_current_user)]
 
 # Definição global para a resposta 400
 BAD_REQUEST_CREATE_USER_RESPONSE = {
@@ -62,20 +60,20 @@ USER_NOT_ENOUGH_PERMISSION_RESPONSE = {
 }
 
 
-# Rota de exemplo, resposta simples com um JSON
-@router.get('/', status_code=HTTPStatus.OK, response_model=Message)
-def read_root():
-    # Retorna uma resposta simples de "Hello World"
-    return {'message': 'hello World'}
+@router.get('/', status_code=HTTPStatus.OK, response_model=UserList)
+def list_users(session: T_Session, limit: int = 10, skip: int = 0):
+    users = session.scalars(select(User).limit(limit).offset(skip))
+
+    return {'users': users}
 
 
 @router.post(
-    '/users',
+    '/',
     status_code=HTTPStatus.CREATED,
     response_model=UserPublic,
     responses={**BAD_REQUEST_CREATE_USER_RESPONSE},
 )
-def create_user(user: UserSchema, session=Depends(get_session)):
+def create_user(user: UserSchema, session: T_Session):
     db_user = session.scalar(
         select(User).where(
             (User.email == user.email) | (User.username == user.username)
@@ -107,24 +105,15 @@ def create_user(user: UserSchema, session=Depends(get_session)):
     return db_user
 
 
-# Rota GET para listar todos os usuários
-@router.get('/users', status_code=HTTPStatus.OK, response_model=UserList)
-def list_users(limit: int = 10, skip: int = 0, session=Depends(get_session)):
-    users = session.scalars(select(User).limit(limit).offset(skip))
-
-    return {'users': users}
-
-
-# Rota GET para consultar um usuário específico pelo ID
 @router.get(
-    '/users/{user_id}',
+    '/{user_id}',
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
     responses={
         **USER_NOT_FOUND_RESPONSE
     },  # Resposta de erro personalizada se o usuário não for encontrado
 )
-def read_user(user_id: int, session=Depends(get_session)):
+def read_user(user_id: int, session: T_Session):
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
@@ -133,9 +122,8 @@ def read_user(user_id: int, session=Depends(get_session)):
     return user
 
 
-# Rota PUT para atualizar os dados de um usuário
 @router.put(
-    '/users/{user_id}',
+    '/{user_id}',
     status_code=HTTPStatus.OK,
     response_model=UserPublic,
     responses={
@@ -145,12 +133,12 @@ def read_user(user_id: int, session=Depends(get_session)):
 def update_user(
     user_id: int,
     user: UserSchema,
-    session=Depends(get_session),
-    current_user=Depends(get_current_user),
+    session: T_Session,
+    current_user: T_CurrentUser,
 ):
     if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=HTTPStatus.FORBIDDEN,
             detail='Not enough permission',
         )
 
@@ -166,7 +154,7 @@ def update_user(
 
 # Rota DELETE para deletar um usuário
 @router.delete(
-    '/users/{user_id}',
+    '/{user_id}',
     status_code=HTTPStatus.OK,
     response_model=Message,
     responses={
@@ -175,12 +163,12 @@ def update_user(
 )
 def delete_user(
     user_id: int,
-    session=Depends(get_session),
-    current_user=Depends(get_current_user),
+    session: T_Session,
+    current_user: T_CurrentUser,
 ):
     if current_user.id != user_id:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
+            status_code=HTTPStatus.FORBIDDEN,
             detail='Not enough permission',
         )
 
@@ -188,21 +176,3 @@ def delete_user(
     session.commit()
 
     return {'message': 'User deleted successfully'}
-
-
-@router.post('/token', response_model=Token)
-def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    session=Depends(get_session),
-):
-    user = session.scalar(select(User).where(User.username == form_data.username))
-
-    if not user or not verify_password(form_data.password, user.password):
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail='Incorrect username or password',
-        )
-
-    access_token = create_access_token(data={'sub': user.username})
-
-    return {'access_token': access_token, 'token_type': 'Bearer'}

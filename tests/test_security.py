@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from jwt import decode
 
-from fast_zero.security import ALGORITHM, SECRET_KEY, create_access_token
+from fast_zero.security import create_access_token, settings
 
 
 def test_jwt():
@@ -10,15 +10,16 @@ def test_jwt():
 
     token = create_access_token(data)
 
-    result = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    result = decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
     assert result['sub'] == data['sub']
+
     assert 'exp' in result
 
 
 def test_jwt_invalid_token(client):
     response = client.delete(
-        '/api/v2/users/1', headers={'Authorization': 'Bearer token-invalido'}
+        '/api/users/1', headers={'Authorization': 'Bearer token-invalido'}
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -30,7 +31,7 @@ def test_get_current_user_not_found(client):
     token = create_access_token(data)
 
     response = client.delete(
-        '/api/v2/users/1',
+        '/api/users/1',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -43,7 +44,7 @@ def test_get_current_user_does_not_exists(client):
     token = create_access_token(data)
 
     response = client.delete(
-        '/api/v2/users/1',
+        '/api/users/1',
         headers={'Authorization': f'Bearer {token}'},
     )
 

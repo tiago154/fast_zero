@@ -3,16 +3,9 @@ from http import HTTPStatus
 from fast_zero.schemas import UserPublic
 
 
-def test_root_deve_retornar_ok_e_ola_mundo(client):
-    response = client.get('/api/v2')
-
-    assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'message': 'hello World'}
-
-
 def test_create_user(client, user_data):
     response = client.post(
-        '/api/v2/users',
+        '/api/users',
         json=user_data,
     )
 
@@ -26,7 +19,7 @@ def test_create_user(client, user_data):
 
 def test_create_user_with_same_username(client, user_data, register_user):
     response = client.post(
-        '/api/v2/users',
+        '/api/users',
         json=user_data,
     )
 
@@ -37,7 +30,7 @@ def test_create_user_with_same_username(client, user_data, register_user):
 def test_create_user_with_same_email(client, user_data, register_user):
     user_data['username'] = 'user2'
     response = client.post(
-        '/api/v2/users',
+        '/api/users',
         json=user_data,
     )
 
@@ -45,22 +38,22 @@ def test_create_user_with_same_email(client, user_data, register_user):
     assert response.json() == {'detail': 'User with this email already exists'}
 
 
-def test_read_user(client, user_data):
-    response = client.get('/api/v2/users/1')
+def test_read_user(client):
+    response = client.get('/api/users/1')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
 
 
 def test_read_users(client, user_data):
-    response = client.get('/api/v2/users')
+    response = client.get('/api/users')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'users': []}
 
 
 def test_read_user_with_user(client, user_data, register_user):
-    response = client.get('/api/v2/users/1')
+    response = client.get('/api/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -71,7 +64,7 @@ def test_read_user_with_user(client, user_data, register_user):
 
 
 def test_read_user_nao_encontrado_deve_retornar_not_found(client):
-    response = client.get('/api/v2/users/150')
+    response = client.get('/api/users/150')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
@@ -79,7 +72,7 @@ def test_read_user_nao_encontrado_deve_retornar_not_found(client):
 
 def test_read_users_with_users(client, user_data, register_user):
     user_schema = UserPublic.model_validate(register_user).model_dump()
-    response = client.get('/api/v2/users')
+    response = client.get('/api/users')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'users': [user_schema]}
@@ -93,7 +86,7 @@ def test_update_user(client, user_data, register_user, token):
     }
 
     response = client.put(
-        f'/api/v2/users/{register_user.id}',
+        f'/api/users/{register_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json=update_user_data,
     )
@@ -114,18 +107,18 @@ def test_update_user_com_usuario_errado(client, user_data, register_user, token)
     }
 
     response = client.put(
-        '/api/v2/users/2',
+        '/api/users/2',
         headers={'Authorization': f'Bearer {token}'},
         json=update_user_data,
     )
 
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'Not enough permission'}
 
 
 def test_delete_user(client, register_user, token):
     response = client.delete(
-        f'/api/v2/users/{register_user.id}',
+        f'/api/users/{register_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -135,34 +128,8 @@ def test_delete_user(client, register_user, token):
 
 def test_delete_user_com_usuario_errado(client, register_user, token):
     response = client.delete(
-        '/api/v2/users/2', headers={'Authorization': f'Bearer {token}'}
+        '/api/users/2', headers={'Authorization': f'Bearer {token}'}
     )
 
-    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {'detail': 'Not enough permission'}
-
-
-def test_get_token(client, register_user):
-    response = client.post(
-        '/api/v2/token',
-        data={
-            'username': register_user.username,
-            'password': register_user.clean_password,
-        },
-    )
-
-    token = response.json()
-
-    assert response.status_code == HTTPStatus.OK
-    assert token['token_type'] == 'Bearer'
-    assert 'access_token' in token
-
-
-def test_get_token_invalid(client, register_user):
-    response = client.post(
-        '/api/v2/token',
-        data={'username': register_user.username, 'password': 'invalid'},
-    )
-
-    assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert response.json() == {'detail': 'Incorrect username or password'}
