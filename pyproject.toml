@@ -21,6 +21,8 @@ pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 ruff = "^0.8.3"
 taskipy = "^1.14.1"
+factory-boy = "^3.3.3"
+freezegun = "^1.5.1"
 
 [tool.taskipy.tasks]
 dev = "fastapi dev fast_zero/app.py"
@@ -28,7 +30,7 @@ lint = "ruff check . && ruff check . --diff"
 lint_fix = "ruff check . --fix && ruff format ."
 post_test = "echo 'Executando post_test' && coverage html"
 pre_test = "task lint"
-test = "pytest --envfile .env.test -s --cov=fast_zero -vv"
+test = "pytest -s --cov=fast_zero -vv"
 
 [tool.ruff]
 extend-exclude = ['migrations']

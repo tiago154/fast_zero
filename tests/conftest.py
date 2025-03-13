@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 
+import factory
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
@@ -11,6 +12,15 @@ from fast_zero.app import app
 from fast_zero.database import get_session
 from fast_zero.models import User, table_registry
 from fast_zero.security import get_password_hash
+
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = User
+
+    username = factory.Sequence(lambda number: f'user{number + 1}')
+    email = factory.LazyAttribute(lambda obj: f'{obj.username}@email.com')
+    password = factory.LazyAttribute(lambda obj: f'password{obj.username}')
 
 
 @pytest.fixture
@@ -71,16 +81,30 @@ def mock_db_time():
 
 
 @pytest.fixture
-def register_user(session, user_data):
-    user = User(**{
-        **user_data,
-        'password': get_password_hash(user_data['password']),
-    })
+def register_user(session):
+    password = 'password'
+
+    user = UserFactory(password=get_password_hash(password))
     session.add(user)
     session.commit()
     session.refresh(user)
 
-    user.clean_password = user_data['password']  # Monkey Patching
+    user.clean_password = password  # Monkey Patching
+
+    return user
+
+
+@pytest.fixture
+def register_other_user(session):
+    password = 'testtest'
+
+    user = UserFactory(password=get_password_hash(password))
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    user.clean_password = password
 
     return user
 
